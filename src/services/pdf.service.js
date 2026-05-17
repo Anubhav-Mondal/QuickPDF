@@ -97,6 +97,10 @@ export const addWatermark = async (file, watermarkText = "CONFIDENTIAL", options
     offsetX = 0,
     offsetY = 0,
     imageScale = 0.4,
+    tile = false,
+    tileSpacingX = 200,
+    tileSpacingY = 150,
+    tileStagger = false,
   } = options;
 
   const arrayBuffer = await file.arrayBuffer();
@@ -128,80 +132,120 @@ export const addWatermark = async (file, watermarkText = "CONFIDENTIAL", options
         const scale   = targetW / imgW;
         const targetH = imgH * scale;
 
-        const margin = 40;
-        let x, y;
+        if (tile) {
+          const cols = Math.ceil(pageW / tileSpacingX) + 1;
+          const rows = Math.ceil(pageH / tileSpacingY) + 1;
 
-        switch (position) {
-          case "top-left":
-            x = margin; y = pageH - margin - targetH; break;
-          case "top-right":
-            x = pageW - margin - targetW; y = pageH - margin - targetH; break;
-          case "bottom-left":
-            x = margin; y = margin; break;
-          case "bottom-right":
-            x = pageW - margin - targetW; y = margin; break;
-          case "center":
-          default:
-            x = (pageW - targetW) / 2;
-            y = (pageH - targetH) / 2;
-            break;
-        }
+          for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+              const staggerOffset = tileStagger && row % 2 !== 0 ? tileSpacingX / 2 : 0;
+              page.drawImage(embeddedImage, {
+                x: col * tileSpacingX + staggerOffset + Number(offsetX),
+                y: row * tileSpacingY + Number(offsetY),
+                width: targetW,
+                height: targetH,
+                opacity: parseFloat(opacity),
+              });
+            }
+          }
+        } else {
+            const margin = 40;
+            let x, y;
+    
+            switch (position) {
+              case "top-left":
+                x = margin; y = pageH - margin - targetH; break;
+              case "top-right":
+                x = pageW - margin - targetW; y = pageH - margin - targetH; break;
+              case "bottom-left":
+                x = margin; y = margin; break;
+              case "bottom-right":
+                x = pageW - margin - targetW; y = margin; break;
+              case "center":
+              default:
+                x = (pageW - targetW) / 2;
+                y = (pageH - targetH) / 2;
+                break;
+            }
+    
+            page.drawImage(embeddedImage, {
+              x: x + Number(offsetX),
+              y: y + Number(offsetY),
+              width: targetW,
+              height: targetH,
+              opacity: parseFloat(opacity),
+            })
+          }
 
-        page.drawImage(embeddedImage, {
-          x: x + Number(offsetX),
-          y: y + Number(offsetY),
-          width: targetW,
-          height: targetH,
-          opacity: parseFloat(opacity),
-        })
       })
 
   } else {
 
   pages.forEach((page) => {
     const { width, height } = page.getSize();
-    const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, fontSize);
-    const textHeight = helveticaFont.heightAtSize(fontSize);
+
+    if (tile) {
+      const cols = Math.ceil(width / tileSpacingX) + 1;
+      const rows = Math.ceil(height / tileSpacingY) + 1;
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const staggerOffset = tileStagger && row % 2 !== 0 ? tileSpacingX / 2 : 0;
+          page.drawText(watermarkText, {
+            x: col * tileSpacingX + staggerOffset + Number(offsetX),
+            y: height - (row * tileSpacingY) + Number(offsetY),
+            size: fontSize,
+            font: helveticaFont,
+            color: rgb(0.5, 0.5, 0.5),
+            opacity: parseFloat(opacity),
+            rotate: degrees(rotation),
+          });
+        }
+      }
+    } else {
+        const textWidth = helveticaFont.widthOfTextAtSize(watermarkText, fontSize);
+        const textHeight = helveticaFont.heightAtSize(fontSize);
+        
+        // Convert degrees to radians for math
+        const rad = (rotation * Math.PI) / 180;
     
-    // Convert degrees to radians for math
-    const rad = (rotation * Math.PI) / 180;
-
-    let x, y;
-    const margin = 40;
-
-    switch (position) {
-      case "top-left":
-        x = margin;
-        y = height - margin - textHeight;
-        break;
-      case "top-right":
-        x = width - margin - textWidth;
-        y = height - margin - textHeight;
-        break;
-      case "bottom-left":
-        x = margin;
-        y = margin;
-        break;
-      case "bottom-right":
-        x = width - margin - textWidth;
-        y = margin;
-        break;
-      case "center":
-      default:
-        x = (width / 2) - (Math.cos(rad) * textWidth / 2) + (Math.sin(rad) * textHeight / 2);
-        y = (height / 2) - (Math.sin(rad) * textWidth / 2) - (Math.cos(rad) * textHeight / 2);
-        break;
+        let x, y;
+        const margin = 40;
+    
+        switch (position) {
+          case "top-left":
+            x = margin;
+            y = height - margin - textHeight;
+            break;
+          case "top-right":
+            x = width - margin - textWidth;
+            y = height - margin - textHeight;
+            break;
+          case "bottom-left":
+            x = margin;
+            y = margin;
+            break;
+          case "bottom-right":
+            x = width - margin - textWidth;
+            y = margin;
+            break;
+          case "center":
+          default:
+            x = (width / 2) - (Math.cos(rad) * textWidth / 2) + (Math.sin(rad) * textHeight / 2);
+            y = (height / 2) - (Math.sin(rad) * textWidth / 2) - (Math.cos(rad) * textHeight / 2);
+            break;
+      }
+      page.drawText(watermarkText, {
+        x: x + Number(offsetX),
+        y: y + Number(offsetY),
+        size: fontSize,
+        font: helveticaFont,
+        color: rgb(0.5, 0.5, 0.5),
+        opacity: parseFloat(opacity),
+        rotate: degrees(rotation),
+      });
     }
 
-    page.drawText(watermarkText, {
-      x: x + Number(offsetX),
-      y: y + Number(offsetY),
-      size: fontSize,
-      font: helveticaFont,
-      color: rgb(0.5, 0.5, 0.5),
-      opacity: parseFloat(opacity),
-      rotate: degrees(rotation),
-    });
   });
   }
 

@@ -24,7 +24,11 @@ export function Watermark() {
     fontSize: 60,
     rotation: 45,
     offsetX: 0,
-    offsetY: 0
+    offsetY: 0,
+    tile: false,
+    tileSpacingX: 200,
+    tileSpacingY: 150,
+    tileStagger: false,
   });
 
   const [watermarkMode, setWatermarkMode] = useState("text");
@@ -239,20 +243,22 @@ export function Watermark() {
                   <h3>Style & Position</h3>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs text-zinc-500 uppercase tracking-wider">Position</label>
-                  <select
-                    value={options.position}
-                    onChange={(e) => updateOption("position", e.target.value)}
-                    className="w-full h-10 px-3 bg-black border border-white/10 text-white rounded-lg outline-none"
-                  >
-                    <option value="center">Center</option>
-                    <option value="top-left">Top Left</option>
-                    <option value="top-right">Top Right</option>
-                    <option value="bottom-left">Bottom Left</option>
-                    <option value="bottom-right">Bottom Right</option>
-                  </select>
-                </div>
+                {!options.tile && (
+                  <div className="space-y-2">
+                    <label className="text-xs text-zinc-500 uppercase tracking-wider">Position</label>
+                    <select
+                      value={options.position}
+                      onChange={(e) => updateOption("position", e.target.value)}
+                      className="w-full h-10 px-3 bg-black border border-white/10 text-white rounded-lg outline-none"
+                    >
+                      <option value="center">Center</option>
+                      <option value="top-left">Top Left</option>
+                      <option value="top-right">Top Right</option>
+                      <option value="bottom-left">Bottom Left</option>
+                      <option value="bottom-right">Bottom Right</option>
+                    </select>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   {watermarkMode === "text" && (
@@ -301,6 +307,41 @@ export function Watermark() {
                     />
                   </div>
                 </div>
+                <div className="pt-4 border-t border-white/10 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Tile Watermark</span>
+                    <button onClick={() => updateOption("tile", !options.tile)}
+                      className={`w-11 h-6 rounded-full transition-colors ${options.tile ? "bg-white" : "bg-zinc-700"}`}>
+                      <span className={`block w-4 h-4 rounded-full bg-black mx-auto transition-transform ${options.tile ? "translate-x-2.5" : "-translate-x-2.5"}`} />
+                    </button>
+                  </div>
+
+                  {options.tile && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-xs text-zinc-500 uppercase">Spacing X: {options.tileSpacingX}px</label>
+                          <input type="range" min="80" max="400" value={options.tileSpacingX}
+                            onChange={(e) => updateOption("tileSpacingX", parseInt(e.target.value))}
+                            className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs text-zinc-500 uppercase">Spacing Y: {options.tileSpacingY}px</label>
+                          <input type="range" min="80" max="400" value={options.tileSpacingY}
+                            onChange={(e) => updateOption("tileSpacingY", parseInt(e.target.value))}
+                            className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white" />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-zinc-500 uppercase tracking-wider">Stagger Rows</span>
+                        <button onClick={() => updateOption("tileStagger", !options.tileStagger)}
+                          className={`w-11 h-6 rounded-full transition-colors ${options.tileStagger ? "bg-white" : "bg-zinc-700"}`}>
+                          <span className={`block w-4 h-4 rounded-full bg-black mx-auto transition-transform ${options.tileStagger ? "translate-x-2.5" : "-translate-x-2.5"}`} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+</div>
               </div>
             </div>
           )}
